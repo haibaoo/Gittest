@@ -10,6 +10,10 @@ int main(int argc,char**argv){
     Config config;
     config.parsearg(argc,argv);
 
-    
+    //初始化
+    Webserver server;
+
+    server.init(config.PORT,user,passwd,databasename,config.LOGWrite,
+    config.OPT_LINGE);
 
 }
