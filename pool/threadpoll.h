@@ -1,14 +1,13 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
-class Threadpoll
-{
-private:
-    
+class ThreadPoll
+{   
 public:
-    Threadpoll();
-    ~Threadpoll();
-};
+    ThreadPoll();
+    ~ThreadPoll();
+private:
 
+};
 
 #endif THREADPOOL_H
