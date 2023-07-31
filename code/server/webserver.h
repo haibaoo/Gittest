@@ -30,10 +30,12 @@ private:
     int listenFd_;
     char *srcDir_;
 
+    //智能指针可以自动管理内存
     std::unique_ptr<HeapTimer> timer_;
     std::unique_ptr<ThreadPool> threadpool_;
     std::unique_ptr<Epoller> epoller_;
-    std::unordered_map<int,HttpConn> user_;
+    std::unordered_map<int,HttpConn> user_; //HttpConn是自定义类型、所以可能需要自定义
+
 
 };
 

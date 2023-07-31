@@ -9,4 +9,13 @@ Webserver::Webserver(int port, int trigMode, int timeoutMS, bool OptLinger,
     srcDir_ = getcwd(nullptr,256);
     assert(srcDir_);
     strcat(srcDir_,"/resources/");
+    
+    HttpConn::userCount = 0;
+    HttpConn::srcDir = srcDir_;
+
+
+
+
+
+
 }
