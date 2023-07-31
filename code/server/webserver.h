@@ -7,8 +7,10 @@
 #include <string.h>
 #include "../timer/heaptimer.h"
 #include "../pool/threadpool.h"
+#include "../pool/sqlconnpool.h"
 #include "epoller.h"
 #include "../http/httpconn.h"
+#include "../log/log.h"
 
 class Webserver{
 public:
@@ -19,6 +21,8 @@ public:
     ~Webserver();
     void Start();
 private:
+    bool InitSocket_();
+    void InitEventMode_(int trigMode);
 
 
 
