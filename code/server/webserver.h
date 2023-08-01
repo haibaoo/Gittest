@@ -5,6 +5,9 @@
 #include <assert.h>
 #include <unordered_map>
 #include <string.h>
+#include <netinet/in.h>
+#include <fcntl.h>
+
 #include "../timer/heaptimer.h"
 #include "../pool/threadpool.h"
 #include "../pool/sqlconnpool.h"
@@ -24,6 +27,7 @@ private:
     bool InitSocket_();
     void InitEventMode_(int trigMode);
 
+    static int SetFdNonblock(int fd);
 
 
 
@@ -33,6 +37,9 @@ private:
     bool isClose_;
     int listenFd_;
     char *srcDir_;
+
+    uint32_t listenEvent_;
+    uint32_t connEvent_;
 
     //智能指针可以自动管理内存
     std::unique_ptr<HeapTimer> timer_;
