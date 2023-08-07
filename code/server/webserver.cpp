@@ -8,7 +8,7 @@ Webserver::Webserver(int port, int trigMode, int timeoutMS, bool OptLinger,
     {
     srcDir_ = getcwd(nullptr,256);
     assert(srcDir_);
-    strcat(srcDir_,"/resources/");
+    strcat(srcDir_,"/resources/");//char 字符串用这个
     
     HttpConn::userCount = 0;//todo
     HttpConn::srcDir = srcDir_;
@@ -113,3 +113,7 @@ bool Webserver::InitSocket_(){
     return true;
 }
 
+int WebServer::SetFdNonblock(int fd) {
+    assert(fd > 0);
+    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
+}

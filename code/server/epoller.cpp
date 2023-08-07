@@ -1,9 +1,11 @@
 #include "epoller.h"
 
-/*
-* events_还没有初始化
-* epollFd_:epoll实例描述符（同时监控上限为512）、
-*/
+/**
+ * 
+ * @param 
+ * epollFd_:epoll实例描述符（同时监控上限为512）、
+ * @return 
+ * */
 Epoller::Epoller(int maxEvent):epollFd_(epoll_create(512)), events_(maxEvent){
     assert(epollFd_ >= 0 && events_.size() > 0);
 }
