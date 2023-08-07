@@ -59,6 +59,13 @@ void Webserver::InitEventMode_(int trigMode){
     HttpConn::isET = (connEvent_ & EPOLLET);
 }
 
+int Webserver::SetFdNonblock(int fd)
+{
+    assert(fd > 0);
+    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
+    return 0;
+}
+
 bool Webserver::InitSocket_(){
     int ret;
     struct sockaddr_in addr;
@@ -113,7 +120,3 @@ bool Webserver::InitSocket_(){
     return true;
 }
 
-int WebServer::SetFdNonblock(int fd) {
-    assert(fd > 0);
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
-}

@@ -8,12 +8,12 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 
-#include "../timer/heaptimer.h"
-#include "../pool/threadpool.h"
-#include "../pool/sqlconnpool.h"
 #include "epoller.h"
-#include "../http/httpconn.h"
 #include "../log/log.h"
+#include "../timer/heaptimer.h"
+#include "../pool/sqlconnpool.h"
+#include "../pool/threadpool.h"
+#include "../http/httpconn.h"
 
 class Webserver{
 public:
@@ -26,7 +26,6 @@ public:
 private:
     bool InitSocket_();
     void InitEventMode_(int trigMode);
-
     static int SetFdNonblock(int fd);
 
 
