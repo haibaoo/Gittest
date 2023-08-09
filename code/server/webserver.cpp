@@ -1,5 +1,9 @@
 #include "webserver.h"
 
+/**
+ * @brief 初始化server
+ * 
+*/
 Webserver::Webserver(int port, int trigMode, int timeoutMS, bool OptLinger, 
         int sqlPort, const char* sqlUser, const  char* sqlPwd, 
         const char* dbName, int connPoolNum, int threadNum,
@@ -8,7 +12,7 @@ Webserver::Webserver(int port, int trigMode, int timeoutMS, bool OptLinger,
     {
     srcDir_ = getcwd(nullptr,256);
     assert(srcDir_);
-    strcat(srcDir_,"/resources/");//char 字符串用这个
+    strcat(srcDir_,"/resources/");//char 字符串用这个，string可以直接用+
     
     HttpConn::userCount = 0;//todo
     HttpConn::srcDir = srcDir_;
@@ -57,6 +61,16 @@ void Webserver::InitEventMode_(int trigMode){
         break; 
     }
     HttpConn::isET = (connEvent_ & EPOLLET);
+}
+
+/**
+ * @brief 服务器运转
+*/
+void Webserver::Start(){
+    int timeMS = -1;
+    if(!isClose_) { LOG_INFO("========== Server start =========="); }
+    
+
 }
 
 int Webserver::SetFdNonblock(int fd)
