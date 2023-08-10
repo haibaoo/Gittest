@@ -52,7 +52,7 @@ private:
 
     bool isClose_;
 
-    std::condition_variable condConsumer_;//条件变量
+    std::condition_variable condConsumer_;
     
     std::condition_variable condProducer_;
 
@@ -70,7 +70,7 @@ BlockDeque<T>::~BlockDeque(){
     Close();
 }
 
-template <class T>
+template <class T>//
 void BlockDeque<T>::Close(){
     {
         std::lock_guard(std::mutex) locker(mtx_);//lock_guard自动申请释放mtx
@@ -86,7 +86,7 @@ void BlockDeque<T>::flush(){
     condConsumer_.notify_one();
 }
 
-template <class T>
+template <class T>//
 void BlockDeque<T>::clear(){
     std::lock_guard<std::mutex> locker(mtx_);
     deq_.clear();
@@ -189,5 +189,6 @@ bool BlockDeque<T>::pop(T &item, int timeout) {
     condProducer_.notify_one();
     return true;
 }
+
 
 #endif

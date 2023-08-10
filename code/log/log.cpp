@@ -71,6 +71,8 @@ void Log::init(int level, const char* path, const char* suffix,
         assert(fp_!=nullptr);
     }
 }
+
+
 /**
  * @brief 向日志文件写内容
 */
@@ -84,6 +86,15 @@ void Log::flush(){
     if(isAsync_){
         deque_->flush();
     }
+}
+
+
+void Log::AsyncWrite_(){
+    std::string str = "";
+    while(deque_->pop(str)) {
+        std::lock_guard<std::mutex> locker(mtx_);
+        fputs(str.c_str(), fp_);
+    }    
 }
 
 void Log::FlushLogThread(){

@@ -54,7 +54,7 @@ private:
 
     FILE* fp_;              //文件指针
     std::unique_ptr<BlockDeque<std::string>> deque_;
-    std::unique_ptr<std::thread> writeThread_;
+    std::unique_ptr<std::thread> writeThread_;     //专门用来写的线程
     std::mutex mtx_;
 
 };
