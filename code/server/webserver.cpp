@@ -23,7 +23,7 @@ Webserver::Webserver(int port, int trigMode, int timeoutMS, bool OptLinger,
     if(!InitSocket_()){ isClose_ = true;}
 
     if(openLog){
-        Log::Instance()->init(logLevel, "./log", ".log", logQueSize);
+        Log::Instance()->init(logLevel, "./log", ".log", logQueSize);//
         if(isClose_){LOG_ERROR("========== Server init error!==========");}
         else{
             LOG_INFO("========== Server init ==========");

@@ -27,6 +27,7 @@ int Log::GetLevel(){
  * @param suffix 日志后缀
  * @param maxQueueCapacity ？
  * 
+ * 并将使用痕迹等消除
 */
 void Log::init(int level, const char* path, const char* suffix,
                 int maxQueueCapacity){
@@ -45,7 +46,7 @@ void Log::init(int level, const char* path, const char* suffix,
         isAsync_ = false;
     }
 
-    lineCount_ = 0;
+    lineCount_ = 0;//该文件中没写过
 
     time_t timer = time(nullptr);
     struct tm *sysTime = localtime(&timer);
@@ -77,9 +78,88 @@ void Log::init(int level, const char* path, const char* suffix,
  * @brief 向日志文件写内容
 */
 void Log::write(int level ,const char* format, ...){
-
+    struct timeval now = {0, 0}; //
+    gettimeofday(&now, nullptr);
+    time_t tSec = now.tv_sec;
+    struct tm *sysTime = localtime(&tSec);
+    struct tm t = *sysTime;
+    va_list vaList; //
     
+    //超过一天以前写过，或者写过就行
+    if(toDay_ != t.tm_mday || (lineCount_ && (lineCount_ % MAX_LINES == 0)))
+    {
+        std::unique_lock<std::mutex> locker(mtx_);
+        locker.unlock();
 
+
+        char newFile[LOG_NAME_LEN];
+        char tail[36] = {0};
+        snprintf(tail, 36, "%04d_%02d_%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+
+        if(toDay_ != t.tm_mday)
+        {
+            snprintf(newFile, LOG_NAME_LEN - 72, "%s/%s%s", path_, tail, suffix_);
+            toDay_ = t.tm_mday;
+            lineCount_ = 0;            
+        }
+        else{
+            snprintf(newFile, LOG_NAME_LEN - 72, "%s/%s-%d%s", path_, tail, (lineCount_  / MAX_LINES), suffix_);
+        }
+
+        locker.lock();
+        flush();
+        fclose(fp_);
+        fp_ = fopen(newFile,"a");
+        assert(fp_ != nullptr);
+    }
+
+    {
+        std::unique_lock<std::mutex> locker(mtx_); 
+        lineCount_++;
+        int n = snprintf(buff_.BeginWrite(), 128, "%d-%02d-%02d %02d:%02d:%02d.%06ld ",
+                    t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+                    t.tm_hour, t.tm_min, t.tm_sec, now.tv_usec);//往buffer里写
+        
+        buff_.HasWritten(n);
+        AppendLogLevelTitle_(level);//加日志等级
+
+        va_start(vaList, format);//开始使用可变参数
+        int m = vsnprintf(buff_.BeginWrite(), buff_.WritableBytes(), format, vaList);
+        va_end(vaList);
+
+        buff_.HasWritten(m);
+        buff_.Append("\n\0", 2);
+
+        if(isAsync_ && deque_ && !deque_->full()) {//要是deque没满，就将buffer的内容送到deque
+            deque_->push_back(buff_.RetrieveAllToStr());
+        } else {
+            fputs(buff_.Peek(), fp_);//否则直接输出到文件
+        }
+        buff_.RetrieveAll();        
+
+    }
+
+}
+
+
+void Log::AppendLogLevelTitle_(int level){
+    switch(level){
+    case 0:
+        buff_.Append("[debug]: ",9);
+        break;
+    case 1:
+        buff_.Append("[info] : ", 9);
+        break;
+    case 2:
+        buff_.Append("[warn] : ", 9);
+        break;
+    case 3:
+        buff_.Append("[error]: ", 9);
+        break;
+    default:
+        buff_.Append("[info] : ", 9);
+        break;            
+    }
 }
 
 void Log::flush(){
