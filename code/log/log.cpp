@@ -27,7 +27,7 @@ int Log::GetLevel(){
  * @param suffix 日志后缀
  * @param maxQueueCapacity ？
  * 
- * 并将使用痕迹等消除
+ * 并将使用痕迹等消除(只在首次创建时init)
 */
 void Log::init(int level, const char* path, const char* suffix,
                 int maxQueueCapacity){

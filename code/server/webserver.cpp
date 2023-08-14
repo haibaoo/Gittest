@@ -64,20 +64,103 @@ void Webserver::InitEventMode_(int trigMode){
 }
 
 /**
- * @brief 服务器运转
+ * @brief 
 */
 void Webserver::Start(){
     int timeMS = -1;
-    if(!isClose_) { LOG_INFO("========== Server start =========="); }
-    
+    if(!isClose_) { LOG_INFO("========== Server start =========="); }//socket失败
+    while(!isClose_){
+        if(timeoutMS_ > 0){
+            timeMS = timer_->GetNextTick();
+        }
+
+        int eventCnt = epoller_->Wait(timeMS);//
+        for(int i = 0; i < eventCnt; i++) {
+            /* 处理事件 */
+            int fd = epoller_->GetEventFd(i);
+            uint32_t events = epoller_->GetEvents(i);
+            if(fd == listenFd_) {
+                DealListen_();
+            }
+            else if(events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {//处理异常
+                assert(users_.count(fd) > 0);
+                CloseConn_(&users_[fd]);
+            }
+            else if(events & EPOLLIN) {//处理读事件
+                assert(users_.count(fd) > 0);//count检查fd是否在map中
+                DealRead_(&users_[fd]);
+            }
+            else if(events & EPOLLOUT) {//处理写事件
+                assert(users_.count(fd) > 0);
+                DealWrite_(&users_[fd]);
+            } else {
+                LOG_ERROR("Unexpected event");
+            }
+        }        
+
+    }
 
 }
 
-int Webserver::SetFdNonblock(int fd)
-{
+void Webserver::SendError_(int fd, const char*info){        
     assert(fd > 0);
-    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
-    return 0;
+    int ret = send(fd,info,strlen(info),0);
+    if(ret < 0){
+        LOG_WARN("send error to client[%d] error!", fd);
+    }
+    close(fd);
+}
+
+void Webserver::CloseConn_(HttpConn* client) {
+    assert(client);
+    LOG_INFO("Client[%d] quit!", client->GetFd());
+    epoller_->DelFd(client->GetFd());
+    client->Close();
+}
+
+
+void Webserver::AddClient_(int fd, sockaddr_in addr) {
+    assert(fd > 0);
+    users_[fd].init(fd, addr);//
+    if(timeoutMS_ > 0) {//超时时间都设为60s
+        timer_->add(fd, timeoutMS_, std::bind(&Webserver::CloseConn_, this, &users_[fd]));
+    }
+    epoller_->ADDFd(fd, EPOLLIN | connEvent_);
+    SetFdNonblock(fd);
+    LOG_INFO("Client[%d] in!", users_[fd].GetFd());
+}
+
+void Webserver::DealListen_() {
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(addr);
+    do {
+        int fd = accept(listenFd_, (struct sockaddr *)&addr, &len);//非阻塞，因为listenFd设置为非阻塞
+        if(fd <= 0) { return;}//没有接收到连接请求
+        else if(HttpConn::userCount >= MAX_FD) {
+            SendError_(fd, "Server busy!");
+            LOG_WARN("Clients is full!");
+            return;
+        }
+        AddClient_(fd, addr);
+    } while(listenEvent_ & EPOLLET);
+}
+
+void Webserver::DealRead_(HttpConn* client) {
+    assert(client);
+    ExtentTime_(client);
+    threadpool_->AddTask(std::bind(&Webserver::OnRead_, this, client));
+}
+
+void Webserver::DealWrite_(HttpConn* client) {
+    assert(client);
+    ExtentTime_(client);
+    threadpool_->AddTask(std::bind(&Webserver::OnWrite_, this, client));
+}
+
+
+void Webserver::ExtentTime_(HttpConn* client) {
+    assert(client);
+    if(timeoutMS_ > 0) { timer_->adjust(client->GetFd(), timeoutMS_); }
 }
 
 bool Webserver::InitSocket_(){
@@ -129,8 +212,15 @@ bool Webserver::InitSocket_(){
         close(listenFd_);
         return false;
     }
-    SetFdNonblock(listenFd_);
+    SetFdNonblock(listenFd_);//accept的时候不阻塞
     LOG_INFO("Server port:%d", port_);
     return true;
+}
+
+int Webserver::SetFdNonblock(int fd)
+{
+    assert(fd > 0);
+    return fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK);
+    return 0;
 }
 
